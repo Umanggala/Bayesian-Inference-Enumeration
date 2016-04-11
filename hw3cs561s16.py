@@ -3,11 +3,19 @@
 
 #-----------------------------------Function and Definitions------------------------------
 
+#Splits the given literal into its variable and the value(eg. LeakIdea = +)
+def splitLiteral(literal):
+    literal = literal.strip()
+    holder = literal.split(' = ')
+    variable = holder[0].strip()
+    value = holder[1].strip()
+    value = True if value == '+' else False
+    return variable,value
 #-----------------------------------Input-------------------------------------------------
 
 #Bayesian Network Dictionary
 BayesNet = {}
-
+rawQueryList = []
 #Reading the input file
 
 #filename = sys.argv[-1]
@@ -17,6 +25,7 @@ inputFile = open(filename)
 #Building queries from input
 line = inputFile.readline().strip()
 while line != '******':
+    rawQueryList.append(line)
     line = inputFile.readline().strip()
 
 #Building the bayesian network from input
@@ -68,4 +77,39 @@ while line != '':
 
     line = inputFile.readline().strip()
 
-print BayesNet['NightDefense']['condprob'][(False,)]
+#--------------------------------Query Inferencing---------------------------------------------
+
+#Query Inferencing for all the input queries
+
+for query in rawQueryList:
+    evidence = {}
+    operation = query[:query.index('(')]
+    operation = operation.strip()
+
+    if operation == 'P':
+        print 'Operation P'
+        literals = query[query.index('(')+1:query.index(')')]
+        orIndex = literals.index('|') if '|' in literals else -1
+        #If both query and evidence is given.
+        if orIndex != -1:
+            holder = literals[:literals.index(' | ')]
+            xVar,xVal = splitLiteral(holder)
+            evidence[xVar] = xVal
+            holder = literals[literals.index(' | ')+3:]
+        #If only evidence is given
+        else:
+            holder  = literals
+
+        literals = holder.strip()
+        literals = literals.split(',')
+        for literal in literals:
+            var,val = splitLiteral(literal)
+            evidence[var] = val
+
+        print evidence
+
+    elif operation == 'EU':
+        print 'Operation EU'
+    else:
+        print 'Operation MEU'
+
