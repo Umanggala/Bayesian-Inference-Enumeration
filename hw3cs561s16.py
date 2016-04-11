@@ -1,5 +1,7 @@
 #@author: Sagar Bharat Makwana
-#Last Updated at 22:22 PST on 04/10/2016
+#Last Updated at 22:36 PST on 04/10/2016
+
+#-----------------------------------Function and Definitions------------------------------
 
 #-----------------------------------Input-------------------------------------------------
 
@@ -52,13 +54,18 @@ while line != '':
             BayesNet[node]['prob'] = line
     else:
         #Nodes with conditional probabilies
-        condprob = []
+        condprob = {}
         for i in range(0,pow(2,len(parents))):
             line = inputFile.readline().strip()
             lines = line.split(' ')
-            condprob.append(lines)
+            prob = lines[0]
+            lines = lines[1:]
+            truth = tuple(True if x == '+' else False for x in lines)
+            condprob[truth] = prob
 
         BayesNet[node]['type'] = 'normal'
         BayesNet[node]['condprob'] = condprob
 
     line = inputFile.readline().strip()
+
+print BayesNet['NightDefense']['condprob'][(False,)]
