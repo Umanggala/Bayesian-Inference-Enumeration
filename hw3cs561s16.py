@@ -1,5 +1,5 @@
 #@author: Sagar Bharat Makwana
-#Last Updated at 22:36 PST on 04/10/2016
+#Last Updated at 23:21 PST on 04/11/2016
 
 #-----------------------------------Function and Definitions------------------------------
 
@@ -11,6 +11,40 @@ def splitLiteral(literal):
     value = holder[1].strip()
     value = True if value == '+' else False
     return variable,value
+
+#Sorts the nodes in the topological order and returns the topological sorted list of nodes
+def topologicalSort(bayesnet):
+    nodes = bayesnet.keys()
+    sortedNodes = []
+
+    while len(sortedNodes) < len(nodes):
+        for node in nodes:
+            if node not in sortedNodes and all(parent in sortedNodes for parent in bayesnet[node]['parents']):
+                sortedNodes.append(node)
+
+    return sortedNodes
+
+#Returns only the node that are required for the query.
+def nodeSelection(evidence,bayesnet,sortedNodes):
+    addedNodeSet = set(evidence.keys())
+    isNodePresent = [True if x in addedNodeSet else False for x in sortedNodes]
+
+    addedNodeSet = set(evidence.keys())
+
+    while len(addedNodeSet) != 0:
+        popNode = addedNodeSet.pop()
+        for parent in bayesnet[popNode]['parents']:
+            addedNodeSet.add(parent)
+            parentIndex = sortedNodes.index(parent)
+            isNodePresent[parentIndex] = True
+
+    newSortedNodes = []
+    for node in sortedNodes:
+        if isNodePresent[sortedNodes.index(node)] == True:
+            newSortedNodes.append(node)
+
+    return newSortedNodes
+
 #-----------------------------------Input-------------------------------------------------
 
 #Bayesian Network Dictionary
@@ -79,9 +113,11 @@ while line != '':
 
 #--------------------------------Query Inferencing---------------------------------------------
 
+sortedNodes = topologicalSort(BayesNet)
 #Query Inferencing for all the input queries
 
 for query in rawQueryList:
+
     evidence = {}
     operation = query[:query.index('(')]
     operation = operation.strip()
@@ -106,10 +142,14 @@ for query in rawQueryList:
             var,val = splitLiteral(literal)
             evidence[var] = val
 
-        print evidence
+        sortedNodesForQuery = nodeSelection(evidence,BayesNet,sortedNodes)
 
     elif operation == 'EU':
         print 'Operation EU'
     else:
         print 'Operation MEU'
+
+
+
+
 
