@@ -1,6 +1,7 @@
 #@author: Sagar Bharat Makwana
-#Last Updated at 23:21 PST on 04/11/2016
+#Last Updated at 00:34 PST on 04/12/2016
 
+import copy
 #-----------------------------------Function and Definitions------------------------------
 
 #Splits the given literal into its variable and the value(eg. LeakIdea = +)
@@ -29,8 +30,6 @@ def nodeSelection(evidence,bayesnet,sortedNodes):
     addedNodeSet = set(evidence.keys())
     isNodePresent = [True if x in addedNodeSet else False for x in sortedNodes]
 
-    addedNodeSet = set(evidence.keys())
-
     while len(addedNodeSet) != 0:
         popNode = addedNodeSet.pop()
         for parent in bayesnet[popNode]['parents']:
@@ -44,6 +43,29 @@ def nodeSelection(evidence,bayesnet,sortedNodes):
             newSortedNodes.append(node)
 
     return newSortedNodes
+
+def enumeration(vars,e):
+    if len(vars) == 0:
+        return 1.0
+
+    Y = vars[0]
+
+    if Y in e:
+        result = probability(Y,e)*enumeration(vars[1:],e)
+    else:
+        sumProbability = []
+        e2 = copy.deepcopy(e)
+        for y in [True,False]:
+            e2[Y] = y
+            sumProbability.append(probability(Y,e2)*enumeration(vars[1:],e2))
+        result =sum(sumProbability)
+
+    return result
+
+#TODO: Implementation to be done
+def probability(Y,e):
+    print Y
+
 
 #-----------------------------------Input-------------------------------------------------
 
