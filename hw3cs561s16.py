@@ -1,5 +1,5 @@
 #@author: Sagar Bharat Makwana
-#Last Updated at 00:34 PST on 04/12/2016
+#Last Updated at 02:42 PST on 04/13/2016
 
 import copy
 #-----------------------------------Function and Definitions------------------------------
@@ -44,27 +44,51 @@ def nodeSelection(evidence,bayesnet,sortedNodes):
 
     return newSortedNodes
 
-def enumeration(vars,e):
+
+#Under Testing
+def enumeration(X,vars,e,bayesnet):
     if len(vars) == 0:
+        print 'case0',vars,e
         return 1.0
 
     Y = vars[0]
 
     if Y in e:
-        result = probability(Y,e)*enumeration(vars[1:],e)
+        #If there is case where
+        if Y == X or X == '':
+            result = probability(Y,e,bayesnet)*enumeration(X,vars[1:],e,bayesnet)
+            print 'case1',Y,vars,e,result
+        else:
+            result = enumeration(X,vars[1:],e,bayesnet)
+            print 'case2',Y,vars,e,result
     else:
         sumProbability = []
         e2 = copy.deepcopy(e)
         for y in [True,False]:
             e2[Y] = y
-            sumProbability.append(probability(Y,e2)*enumeration(vars[1:],e2))
+            xa = probability(Y,e2,bayesnet)
+            xb = enumeration(X,vars[1:],e2,bayesnet)
+            sumProbability.append(xa*xb)
         result =sum(sumProbability)
+        print 'case3',Y,vars,e2,result
 
     return result
 
-#TODO: Implementation to be done
-def probability(Y,e):
-    print Y
+
+def probability(Y,e,bayesnet):
+    if len(bayesnet[Y]['parents']) == 0:
+        if e[Y] == True:
+            return float(bayesnet[Y]['prob'])
+        else:
+            return 1.0-float(bayesnet[Y]['prob'])
+    else:
+        parentTuple = tuple(e[parent] for parent in bayesnet[Y]['parents'])
+
+        if e[Y] == True:
+            return float(bayesnet[Y]['condprob'][parentTuple])
+        else:
+            return 1-float(bayesnet[Y]['condprob'][parentTuple])
+
 
 
 #-----------------------------------Input-------------------------------------------------
@@ -133,6 +157,7 @@ while line != '':
 
     line = inputFile.readline().strip()
 
+print BayesNet
 #--------------------------------Query Inferencing---------------------------------------------
 
 sortedNodes = topologicalSort(BayesNet)
@@ -141,6 +166,7 @@ sortedNodes = topologicalSort(BayesNet)
 for query in rawQueryList:
 
     evidence = {}
+    X = ''
     operation = query[:query.index('(')]
     operation = operation.strip()
 
@@ -153,6 +179,7 @@ for query in rawQueryList:
             holder = literals[:literals.index(' | ')]
             xVar,xVal = splitLiteral(holder)
             evidence[xVar] = xVal
+            X = xVar
             holder = literals[literals.index(' | ')+3:]
         #If only evidence is given
         else:
@@ -165,6 +192,11 @@ for query in rawQueryList:
             evidence[var] = val
 
         sortedNodesForQuery = nodeSelection(evidence,BayesNet,sortedNodes)
+        print 'Query:',query
+        print 'Evidence:',evidence
+        print 'Variables:',sortedNodesForQuery
+        print enumeration(X,sortedNodesForQuery,evidence,BayesNet)
+
 
     elif operation == 'EU':
         print 'Operation EU'
