@@ -1,5 +1,5 @@
 #@author: Sagar Bharat Makwana
-#Last Updated at 02:15 PST on 04/14/2016
+#Last Updated at 03:42 PST on 04/14/2016
 
 import copy
 from decimal import Decimal
@@ -156,13 +156,14 @@ sortedNodes = topologicalSort(BayesNet)
 #Query Inferencing for all the input queries
 for query in rawQueryList:
 
-    evidence = {}
-    X = ''
+    fullEvidence = {}
+    observedEvidence = {}
+
     operation = query[:query.index('(')]
     operation = operation.strip()
 
     if operation == 'P':
-        print 'Operation P'
+        #print 'Operation P'
         isSeparatorGiven = False
         result = 1.0
 
@@ -173,9 +174,13 @@ for query in rawQueryList:
         if orIndex != -1:
             isSeparatorGiven = True
             holder = literals[:literals.index(' | ')]
-            xVar,xVal = splitLiteral(holder)
-            evidence[xVar] = xVal
-            X = xVar
+
+            xLiterals = holder.strip()
+            xLiterals = xLiterals.split(',')
+            for xLiteral in xLiterals:
+                xVar,xVal = splitLiteral(xLiteral)
+                fullEvidence[xVar] = xVal
+
             holder = literals[literals.index(' | ')+3:]
         #If only evidence is given
         else:
@@ -185,25 +190,27 @@ for query in rawQueryList:
         literals = literals.split(',')
         for literal in literals:
             var,val = splitLiteral(literal)
-            evidence[var] = val
+            fullEvidence[var] = val
+            observedEvidence[var] = val
 
         #Final calculations
         if isSeparatorGiven == True:
             #Calculating the numerator
-            sortedNodesForNumerator = nodeSelection(evidence,BayesNet,sortedNodes)
-            numerator = enumeration(sortedNodesForNumerator,evidence,BayesNet)
+            sortedNodesForNumerator = nodeSelection(fullEvidence,BayesNet,sortedNodes)
+            numerator = enumeration(sortedNodesForNumerator,fullEvidence,BayesNet)
 
             #Calculating the denominator
-            newEvidence = copy.deepcopy(evidence)
-            newEvidence.pop(X)
-            sortedNodesForDenominator = nodeSelection(newEvidence,BayesNet,sortedNodes)
-            denominator = enumeration(sortedNodesForDenominator,newEvidence,BayesNet)
+            sortedNodesForDenominator = nodeSelection(observedEvidence,BayesNet,sortedNodes)
+            denominator = enumeration(sortedNodesForDenominator,observedEvidence,BayesNet)
 
             result = numerator/denominator
 
         else:
-            sortedNodesForQuery = nodeSelection(evidence,BayesNet,sortedNodes)
-            result = enumeration(sortedNodesForQuery,evidence,BayesNet)
+            sortedNodesForQuery = nodeSelection(observedEvidence,BayesNet,sortedNodes)
+            result = enumeration(sortedNodesForQuery,observedEvidence,BayesNet)
+
+        #print 'Full Evidence:',fullEvidence
+        #print 'Observed Evidence:',observedEvidence
 
         result = Decimal(str(result)).quantize(Decimal('.01'))
         print result
