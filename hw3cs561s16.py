@@ -1,7 +1,8 @@
 #@author: Sagar Bharat Makwana
-#Last Updated at 02:42 PST on 04/13/2016
+#Last Updated at 02:15 PST on 04/14/2016
 
 import copy
+from decimal import Decimal
 #-----------------------------------Function and Definitions------------------------------
 
 #Splits the given literal into its variable and the value(eg. LeakIdea = +)
@@ -44,37 +45,26 @@ def nodeSelection(evidence,bayesnet,sortedNodes):
 
     return newSortedNodes
 
-
-#Under Testing
-def enumeration(X,vars,e,bayesnet):
+#Returns the probability using enumeration given the required variables(vars),evidence variables(e) and the bayesian network.
+def enumeration(vars,e,bayesnet):
     if len(vars) == 0:
-        print 'case0',vars,e
         return 1.0
 
     Y = vars[0]
 
     if Y in e:
-        #If there is case where
-        if Y == X or X == '':
-            result = probability(Y,e,bayesnet)*enumeration(X,vars[1:],e,bayesnet)
-            print 'case1',Y,vars,e,result
-        else:
-            result = enumeration(X,vars[1:],e,bayesnet)
-            print 'case2',Y,vars,e,result
+        result = probability(Y,e,bayesnet)*enumeration(vars[1:],e,bayesnet)
     else:
         sumProbability = []
         e2 = copy.deepcopy(e)
         for y in [True,False]:
             e2[Y] = y
-            xa = probability(Y,e2,bayesnet)
-            xb = enumeration(X,vars[1:],e2,bayesnet)
-            sumProbability.append(xa*xb)
+            sumProbability.append(probability(Y,e2,bayesnet)*enumeration(vars[1:],e2,bayesnet))
         result =sum(sumProbability)
-        print 'case3',Y,vars,e2,result
 
     return result
 
-
+#Returns the probability of variable Y given its parents in evidence e.
 def probability(Y,e,bayesnet):
     if len(bayesnet[Y]['parents']) == 0:
         if e[Y] == True:
@@ -90,11 +80,11 @@ def probability(Y,e,bayesnet):
             return 1-float(bayesnet[Y]['condprob'][parentTuple])
 
 
-
-#-----------------------------------Input-------------------------------------------------
+#-----------------------------------Input & Building Data Structures--------------------------------
 
 #Bayesian Network Dictionary
 BayesNet = {}
+sortedNodes = []
 rawQueryList = []
 #Reading the input file
 
@@ -160,9 +150,10 @@ while line != '':
 print BayesNet
 #--------------------------------Query Inferencing---------------------------------------------
 
+#Sort all the nodes in topological order
 sortedNodes = topologicalSort(BayesNet)
-#Query Inferencing for all the input queries
 
+#Query Inferencing for all the input queries
 for query in rawQueryList:
 
     evidence = {}
@@ -172,10 +163,15 @@ for query in rawQueryList:
 
     if operation == 'P':
         print 'Operation P'
+        isSeparatorGiven = False
+        result = 1.0
+
         literals = query[query.index('(')+1:query.index(')')]
         orIndex = literals.index('|') if '|' in literals else -1
+
         #If both query and evidence is given.
         if orIndex != -1:
+            isSeparatorGiven = True
             holder = literals[:literals.index(' | ')]
             xVar,xVal = splitLiteral(holder)
             evidence[xVar] = xVal
@@ -183,7 +179,7 @@ for query in rawQueryList:
             holder = literals[literals.index(' | ')+3:]
         #If only evidence is given
         else:
-            holder  = literals
+            holder = literals
 
         literals = holder.strip()
         literals = literals.split(',')
@@ -191,11 +187,26 @@ for query in rawQueryList:
             var,val = splitLiteral(literal)
             evidence[var] = val
 
-        sortedNodesForQuery = nodeSelection(evidence,BayesNet,sortedNodes)
-        print 'Query:',query
-        print 'Evidence:',evidence
-        print 'Variables:',sortedNodesForQuery
-        print enumeration(X,sortedNodesForQuery,evidence,BayesNet)
+        #Final calculations
+        if isSeparatorGiven == True:
+            #Calculating the numerator
+            sortedNodesForNumerator = nodeSelection(evidence,BayesNet,sortedNodes)
+            numerator = enumeration(sortedNodesForNumerator,evidence,BayesNet)
+
+            #Calculating the denominator
+            newEvidence = copy.deepcopy(evidence)
+            newEvidence.pop(X)
+            sortedNodesForDenominator = nodeSelection(newEvidence,BayesNet,sortedNodes)
+            denominator = enumeration(sortedNodesForDenominator,newEvidence,BayesNet)
+
+            result = numerator/denominator
+
+        else:
+            sortedNodesForQuery = nodeSelection(evidence,BayesNet,sortedNodes)
+            result = enumeration(sortedNodesForQuery,evidence,BayesNet)
+
+        result = Decimal(str(result)).quantize(Decimal('.01'))
+        print result
 
 
     elif operation == 'EU':
