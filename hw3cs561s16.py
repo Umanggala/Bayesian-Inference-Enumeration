@@ -3,6 +3,7 @@
 
 import copy
 from decimal import Decimal
+import itertools
 #-----------------------------------Function and Definitions------------------------------
 
 #Splits the given literal into its variable and the value(eg. LeakIdea = +)
@@ -66,6 +67,10 @@ def enumeration(vars,e,bayesnet):
 
 #Returns the probability of variable Y given its parents in evidence e.
 def probability(Y,e,bayesnet):
+
+    if bayesnet[Y]['type'] == 'decision':
+        return 1.0
+
     if len(bayesnet[Y]['parents']) == 0:
         if e[Y] == True:
             return float(bayesnet[Y]['prob'])
@@ -147,7 +152,7 @@ while line != '':
 
     line = inputFile.readline().strip()
 
-print BayesNet
+#print BayesNet
 #--------------------------------Query Inferencing---------------------------------------------
 
 #Sort all the nodes in topological order
@@ -217,9 +222,142 @@ for query in rawQueryList:
 
 
     elif operation == 'EU':
-        print 'Operation EU'
+        #print 'Operation EU'
+        isSeparatorGiven = False
+        result = 1.0
+
+        literals = query[query.index('(')+1:query.index(')')]
+        orIndex = literals.index('|') if '|' in literals else -1
+
+        #If both query and evidence is given.
+        if orIndex != -1:
+            isSeparatorGiven = True
+            holder = literals[:literals.index(' | ')]
+
+            xLiterals = holder.strip()
+            xLiterals = xLiterals.split(',')
+            for xLiteral in xLiterals:
+                xVar,xVal = splitLiteral(xLiteral)
+                fullEvidence[xVar] = xVal
+
+            holder = literals[literals.index(' | ')+3:]
+        #If only evidence is given
+        else:
+            holder = literals
+
+        literals = holder.strip()
+        literals = literals.split(',')
+        for literal in literals:
+            var,val = splitLiteral(literal)
+            fullEvidence[var] = val
+            observedEvidence[var] = val
+
+        fullEvidence['utility'] = True
+
+        #Final calculations
+        if isSeparatorGiven == True:
+            #Calculating the numerator
+            sortedNodesForNumerator = nodeSelection(fullEvidence,BayesNet,sortedNodes)
+            numerator = enumeration(sortedNodesForNumerator,fullEvidence,BayesNet)
+
+            #Calculating the denominator
+            sortedNodesForDenominator = nodeSelection(observedEvidence,BayesNet,sortedNodes)
+            denominator = enumeration(sortedNodesForDenominator,observedEvidence,BayesNet)
+
+            result = numerator/denominator
+
+        else:
+            sortedNodesForQuery = nodeSelection(fullEvidence,BayesNet,sortedNodes)
+            result = enumeration(sortedNodesForQuery,fullEvidence,BayesNet)
+
+        #print 'Full Evidence:',fullEvidence
+        #print 'Observed Evidence:',observedEvidence
+
+        result = int(round(result))
+        print result
+
+
     else:
-        print 'Operation MEU'
+        #print 'Operation MEU'
+
+        isSeparatorGiven = False
+        result = {}
+        maximizationLiterals = []
+
+        literals = query[query.index('(')+1:query.index(')')]
+        orIndex = literals.index('|') if '|' in literals else -1
+
+        #If both query and evidence is given.
+        if orIndex != -1:
+            isSeparatorGiven = True
+            holder = literals[:literals.index(' | ')]
+
+            xLiterals = holder.strip()
+            xLiterals = xLiterals.split(',')
+            for xLiteral in xLiterals:
+                equalIndex = xLiteral.index('=') if '=' in xLiteral else -1
+                if equalIndex != -1:
+                    xVar,xVal = splitLiteral(xLiteral)
+                    fullEvidence[xVar] = xVal
+                else:
+                    maximizationLiterals.append(xLiteral.strip())
+
+            holder = literals[literals.index(' | ')+3:]
+        #If only evidence is given
+        else:
+            holder = literals
+
+        literals = holder.strip()
+        literals = literals.split(',')
+        for literal in literals:
+            equalIndex = literal.index('=') if '=' in literal else -1
+            if equalIndex != -1:
+                var,val = splitLiteral(literal)
+                fullEvidence[var] = val
+                observedEvidence[var] = val
+            else:
+                maximizationLiterals.append(literal.strip())
+
+        fullEvidence['utility'] = True
+
+        sizeOfMaxLiterals = len(maximizationLiterals)
+        truthTable = list(itertools.product([True, False], repeat=sizeOfMaxLiterals))
+
+        for i in range(0,len(truthTable)):
+            completeEvidence = copy.deepcopy(fullEvidence)
+            value = ''
+            j = 0
+            for maxLiteral in maximizationLiterals:
+                completeEvidence[maxLiteral] = truthTable[i][j]
+                if truthTable[i][j] == True:
+                    value = value + '+ '
+                else:
+                    value = value + '- '
+                j = j+1
+
+
+
+            #Final calculations
+            if isSeparatorGiven == True:
+                #Calculating the numerator
+                sortedNodesForNumerator = nodeSelection(completeEvidence,BayesNet,sortedNodes)
+                numerator = enumeration(sortedNodesForNumerator,completeEvidence,BayesNet)
+
+                #Calculating the denominator
+                sortedNodesForDenominator = nodeSelection(observedEvidence,BayesNet,sortedNodes)
+                denominator = enumeration(sortedNodesForDenominator,observedEvidence,BayesNet)
+
+                eachResult = numerator/denominator
+
+            else:
+                sortedNodesForQuery = nodeSelection(completeEvidence,BayesNet,sortedNodes)
+                eachResult = enumeration(sortedNodesForQuery,completeEvidence,BayesNet)
+
+            result[eachResult] = value
+
+        maxResult = max(result.keys())
+
+        print result[maxResult]+str(int(round(maxResult)))
 
 
 
