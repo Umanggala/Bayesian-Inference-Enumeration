@@ -1,6 +1,7 @@
 #@author: Sagar Bharat Makwana
-#Last Updated at 03:42 PST on 04/14/2016
+#Last Updated at 13:42 PST on 04/14/2016
 
+import sys
 import copy
 from decimal import Decimal
 import itertools
@@ -93,8 +94,8 @@ sortedNodes = []
 rawQueryList = []
 #Reading the input file
 
-#filename = sys.argv[-1]
-filename = 'input.txt'
+filename = sys.argv[-1]
+#filename = 'input.txt'
 inputFile = open(filename)
 
 #Building queries from input
@@ -151,6 +152,9 @@ while line != '':
         BayesNet[node]['condprob'] = condprob
 
     line = inputFile.readline().strip()
+
+#-------------------------------Declaring Output Files----------------------------------------
+outputFile = open('output.txt','w')
 
 #print BayesNet
 #--------------------------------Query Inferencing---------------------------------------------
@@ -217,8 +221,10 @@ for query in rawQueryList:
         #print 'Full Evidence:',fullEvidence
         #print 'Observed Evidence:',observedEvidence
 
-        result = Decimal(str(result)).quantize(Decimal('.01'))
-        print result
+        result = Decimal(str(result+1e-8)).quantize(Decimal('.01'))
+        #print result
+        outputFile.write(str(result))
+        outputFile.write('\n')
 
 
     elif operation == 'EU':
@@ -274,7 +280,9 @@ for query in rawQueryList:
         #print 'Observed Evidence:',observedEvidence
 
         result = int(round(result))
-        print result
+        #print result
+        outputFile.write(str(result))
+        outputFile.write('\n')
 
 
     else:
@@ -357,9 +365,16 @@ for query in rawQueryList:
 
         maxResult = max(result.keys())
 
-        print result[maxResult]+str(int(round(maxResult)))
+        #print result[maxResult]+str(int(round(maxResult)))
+        outputFile.write(result[maxResult]+str(int(round(maxResult))))
+        outputFile.write('\n')
 
-
-
+#-----------------------------Brushing the final output file--------------------------------
+outputFile.close()
+with open('output.txt', 'rb+') as finalStripFile:
+    finalStripFile.seek(0,2)
+    size=finalStripFile.tell()
+    finalStripFile.truncate(size-1)
+    finalStripFile.close()
 
 
