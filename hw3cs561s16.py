@@ -1,5 +1,6 @@
 #@author: Sagar Bharat Makwana
-#Last Updated at 13:42 PST on 04/14/2016
+#Last Updated at 21:50 PST on 04/17/2016
+#Vocareum Build 1
 
 import sys
 import copy
@@ -187,6 +188,7 @@ for query in rawQueryList:
             xLiterals = holder.strip()
             xLiterals = xLiterals.split(',')
             for xLiteral in xLiterals:
+                xLiteral = xLiteral.strip()
                 xVar,xVal = splitLiteral(xLiteral)
                 fullEvidence[xVar] = xVal
 
@@ -198,6 +200,7 @@ for query in rawQueryList:
         literals = holder.strip()
         literals = literals.split(',')
         for literal in literals:
+            literal = literal.strip()
             var,val = splitLiteral(literal)
             fullEvidence[var] = val
             observedEvidence[var] = val
@@ -243,6 +246,7 @@ for query in rawQueryList:
             xLiterals = holder.strip()
             xLiterals = xLiterals.split(',')
             for xLiteral in xLiterals:
+                xLiteral = xLiteral.strip()
                 xVar,xVal = splitLiteral(xLiteral)
                 fullEvidence[xVar] = xVal
 
@@ -254,6 +258,7 @@ for query in rawQueryList:
         literals = holder.strip()
         literals = literals.split(',')
         for literal in literals:
+            literal = literal.strip()
             var,val = splitLiteral(literal)
             fullEvidence[var] = val
             observedEvidence[var] = val
@@ -305,6 +310,7 @@ for query in rawQueryList:
             for xLiteral in xLiterals:
                 equalIndex = xLiteral.index('=') if '=' in xLiteral else -1
                 if equalIndex != -1:
+                    xLiteral = xLiteral.strip()
                     xVar,xVal = splitLiteral(xLiteral)
                     fullEvidence[xVar] = xVal
                 else:
@@ -320,6 +326,7 @@ for query in rawQueryList:
         for literal in literals:
             equalIndex = literal.index('=') if '=' in literal else -1
             if equalIndex != -1:
+                literal = literal.strip()
                 var,val = splitLiteral(literal)
                 fullEvidence[var] = val
                 observedEvidence[var] = val
