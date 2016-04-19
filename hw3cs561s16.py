@@ -95,8 +95,8 @@ sortedNodes = []
 rawQueryList = []
 #Reading the input file
 
-filename = sys.argv[-1]
-#filename = 'input.txt'
+#filename = sys.argv[-1]
+filename = 'input.txt'
 inputFile = open(filename)
 
 #Building queries from input
